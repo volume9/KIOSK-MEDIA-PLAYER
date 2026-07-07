@@ -1,0 +1,17 @@
+name: "Kiosk Media Player"
+description: "Web app quản lý và trình chiếu media cho màn hình Kiosk Armbian"
+version: "1.0.0"
+slug: "kiosk_media"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+ports:
+  5000/tcp: 5000
+map:
+  - share:rw
+options: {}
+schema: {}
