@@ -1,0 +1,1 @@
+Cái này diy thôi, nhà có sẳn máy chủ ha, với cái màn hình laptop bỏ không, với vài cái tivibox cấu hình yếu xìu chạy armbian. làm 1 khung tranh điện tử chơi vui vui, hay cái đòng hồ nhỏ giọt, thông báo thời tiết này nọ thôi. armbian cài cho nó cái gui nhẹ với chromium chạy chế độ kiosk, tự khởi chạy lúc mở máy ấy mà
