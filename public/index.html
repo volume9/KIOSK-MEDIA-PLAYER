@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Trình chiếu</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: auto; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .file-item { margin: 5px 0; }
+        button { padding: 8px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Bảng Điều Khiển Media</h2>
+    
+    <div class="box">
+        <h3>1. Upload File (Ảnh/Video)</h3>
+        <input type="file" id="fileInput" accept="image/*,video/*">
+        <button onclick="uploadFile()">Tải lên</button>
+    </div>
+
+    <div class="box">
+        <h3>2. Cài đặt Trình chiếu</h3>
+        <label>Thời gian chiếu ảnh (giây): </label>
+        <input type="number" id="duration" value="5" min="1"><br><br>
+        
+        <label>Hiệu ứng chuyển cảnh: </label>
+        <select id="transition">
+            <option value="none">Không có</option>
+            <option value="fade">Mờ dần (Fade)</option>
+        </select><br><br>
+
+        <h4>Chọn file để chiếu:</h4>
+        <div id="fileList"></div><br>
+        
+        <button onclick="saveConfig()">Lưu cấu hình & Áp dụng</button>
+        <a href="/viewer" target="_blank" style="margin-left: 20px;">Mở Màn hình Trình chiếu</a>
+    </div>
+
+    <script>
+        async function loadData() {
+            // Lấy danh sách file trên server
+            const filesRes = await fetch('/files');
+            const files = await filesRes.json();
+            
+            // Lấy cấu hình hiện tại
+            const confRes = await fetch('/config');
+            const config = await confRes.json();
+            
+            document.getElementById('duration').value = config.duration;
+            document.getElementById('transition').value = config.transition;
+            
+            const fileListDiv = document.getElementById('fileList');
+            fileListDiv.innerHTML = '';
+            files.forEach(file => {
+                const isChecked = config.playlist.includes(file) ? 'checked' : '';
+                fileListDiv.innerHTML += `
+                    <div class="file-item">
+                        <input type="checkbox" class="file-checkbox" value="${file}" ${isChecked}>
+                        <label>${file}</label>
+                    </div>`;
+            });
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if(!fileInput.files[0]) return alert("Vui lòng chọn file");
+            
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            
+            await fetch('/upload', { method: "POST", body: formData });
+            alert("Upload thành công!");
+            loadData();
+        }
+
+        async function saveConfig() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const playlist = Array.from(checkboxes).map(cb => cb.value);
+            const duration = document.getElementById('duration').value;
+            const transition = document.getElementById('transition').value;
+            
+            const config = { playlist, duration: parseInt(duration), transition };
+            
+            await fetch('/config', {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(config)
+            });
+            alert("Đã lưu cấu hình!");
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
