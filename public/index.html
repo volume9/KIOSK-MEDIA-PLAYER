@@ -1,96 +1,39 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý Trình chiếu</title>
-    <style>
-        body { font-family: Arial; padding: 20px; max-width: 800px; margin: auto; }
-        .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        .file-item { margin: 5px 0; }
-        button { padding: 8px 15px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h2>Bảng Điều Khiển Media</h2>
-    
-    <div class="box">
-        <h3>1. Upload File (Ảnh/Video)</h3>
-        <input type="file" id="fileInput" accept="image/*,video/*">
-        <button onclick="uploadFile()">Tải lên</button>
-    </div>
-
-    <div class="box">
-        <h3>2. Cài đặt Trình chiếu</h3>
-        <label>Thời gian chiếu ảnh (giây): </label>
-        <input type="number" id="duration" value="5" min="1"><br><br>
-        
-        <label>Hiệu ứng chuyển cảnh: </label>
-        <select id="transition">
-            <option value="none">Không có</option>
-            <option value="fade">Mờ dần (Fade)</option>
-        </select><br><br>
-
-        <h4>Chọn file để chiếu:</h4>
-        <div id="fileList"></div><br>
-        
-        <button onclick="saveConfig()">Lưu cấu hình & Áp dụng</button>
-        <a href="/viewer" target="_blank" style="margin-left: 20px;">Mở Màn hình Trình chiếu</a>
-    </div>
-
-    <script>
-        async function loadData() {
-            // Lấy danh sách file trên server
-            const filesRes = await fetch('/files');
-            const files = await filesRes.json();
-            
-            // Lấy cấu hình hiện tại
-            const confRes = await fetch('/config');
-            const config = await confRes.json();
-            
-            document.getElementById('duration').value = config.duration;
-            document.getElementById('transition').value = config.transition;
-            
-            const fileListDiv = document.getElementById('fileList');
-            fileListDiv.innerHTML = '';
-            files.forEach(file => {
-                const isChecked = config.playlist.includes(file) ? 'checked' : '';
-                fileListDiv.innerHTML += `
-                    <div class="file-item">
-                        <input type="checkbox" class="file-checkbox" value="${file}" ${isChecked}>
-                        <label>${file}</label>
-                    </div>`;
-            });
-        }
-
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            if(!fileInput.files[0]) return alert("Vui lòng chọn file");
-            
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-            
-            await fetch('/upload', { method: "POST", body: formData });
-            alert("Upload thành công!");
-            loadData();
-        }
-
-        async function saveConfig() {
-            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
-            const playlist = Array.from(checkboxes).map(cb => cb.value);
-            const duration = document.getElementById('duration').value;
-            const transition = document.getElementById('transition').value;
-            
-            const config = { playlist, duration: parseInt(duration), transition };
-            
-            await fetch('/config', {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(config)
-            });
-            alert("Đã lưu cấu hình!");
-        }
-
-        loadData();
-    </script>
-</body>
-</html>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sun Moon Demo</title>
+<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<style>
+html,body{margin:0;height:100%;display:flex;justify-content:center;align-items:center;background:#111;font-family:Arial}
+#scene{width:min(100vw,1100px);aspect-ratio:2/1;position:relative;overflow:hidden;border-radius:18px;background:linear-gradient(#6ec6ff,#dff6ff);transition:background 1s}
+.h{position:absolute;left:0;right:0;bottom:50px;border-top:2px solid #777}
+.body{position:absolute;width:64px;height:64px;border-radius:50%;transform:translate(-50%,-50%)}
+#sun{background:#ffd54f;box-shadow:0 0 50px orange}
+#moon{background:#eee;box-shadow:0 0 30px #fff}
+#info{position:absolute;bottom:8px;width:100%;text-align:center;color:#fff;text-shadow:0 0 5px #000}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:0}
+</style></head><body><div id='scene'><div id='sun' class='body'></div><div id='moon' class='body'></div><div class='h'></div><div id='info'></div></div>
+<script>
+const scene=scene=document.getElementById('scene'),sun=document.getElementById('sun'),moon=document.getElementById('moon'),info=document.getElementById('info');
+for(let i=0;i<120;i++){let s=document.createElement('div');s.className='star';s.style.left=Math.random()*100+'%';s.style.top=Math.random()*55+'%';scene.appendChild(s)}
+const stars=[...document.querySelectorAll('.star')];
+let lat=10.76,lng=106.66;
+navigator.geolocation?.getCurrentPosition(p=>{lat=p.coords.latitude;lng=p.coords.longitude;});
+function arc(progress,w,h){return {x:progress*w,y:(h-40)-Math.sin(progress*Math.PI)*(h*0.7)}}
+function bodyPos(el,start,end,now,w,h){
+ let s=start.getTime(),e=end.getTime(),t=now.getTime();
+ if(e<s){e+=86400000;if(t<s)t+=86400000;}
+ let p=(t-s)/(e-s);
+ if(p<0||p>1){el.style.display='none';return false;}
+ let c=arc(p,w,h);el.style.display='block';el.style.left=c.x+'px';el.style.top=c.y+'px';return true;
+}
+function frame(){
+ const now=new Date(),times=SunCalc.getTimes(now,lat,lng),m=SunCalc.getMoonTimes(now,lat,lng),w=scene.clientWidth,h=scene.clientHeight-50;
+ const day=bodyPos(sun,times.sunrise,times.sunset,now,w,h);
+ if(m.rise&&m.set) bodyPos(moon,m.rise,m.set,now,w,h); else moon.style.display='none';
+ scene.style.background=day?'linear-gradient(#6ec6ff,#dff6ff)':'linear-gradient(#04142d,#0d2148)';
+ stars.forEach((s,i)=>s.style.opacity=day?0:(0.3+0.7*Math.abs(Math.sin((Date.now()/700)+i))));
+ info.textContent=now.toLocaleString('vi-VN');
+ requestAnimationFrame(frame);
+}
+frame();
+</script></body></html>
